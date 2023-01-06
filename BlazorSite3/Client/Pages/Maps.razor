@@ -1,0 +1,54 @@
+﻿<h3>Maps</h3>
+
+
+
+@code {
+    (float lat, float lon) anchor;
+    (float lat, float lon) offset;
+    (float lat, float lon)? current;
+	readonly Dictionary<string, string> prefabs = new()
+	{
+		{ "Moscow", "37.60 0.25 55.75 0.2" },
+		{ "MO", "37.60 0.4 55.75 0.3" },
+		{ "Chelyabinsk", "61.40 0.15 55.15 0.15" },
+	};
+
+    float GetOffset() => (Random.Shared.NextSingle() - 0.5f) * 2;
+    string? Format(float? coords) => coords.HasValue ? coords.Value.ToString("0.000000") : null;
+
+	string? GetPanoramaUrl() =>
+		$"https://yandex.ru/maps/213/moscow/?l=stv%2Csta&ll={Format(current?.lat)}%2C{Format(current?.lon)}&panorama%5Bdirection%5D=0.0%2C0.0&panorama%5Bfull%5D=true&panorama%5Bpoint%5D={Format(current?.lat)}%2C{Format(current?.lon)}&panorama%5Bspan%5D=99.608853%2C60.000000&z=100";
+	string? GetPanoramaWidgetUrl() =>
+		$"https://yandex.ru/map-widget/v1/?ll={Format(current?.lat)}%2C{Format(current?.lon)}&panorama%5Bdirection%5D=0.0%2C0.0&panorama%5Bpoint%5D={Format(current?.lat)}%2C{Format(current?.lon)}&z=100";
+	string GetAreaWidgetUrl() =>
+		$"https://yandex.ru/map-widget/v1/?ll={Format(anchor.lat)}%2C{Format(anchor.lon)}&rl={Format(anchor.lat)}%2C{Format(anchor.lon)}" +
+		$"~{Format(offset.lat)}%2C{Format(offset.lon)}" +
+		$"~0.000000%2C{Format(offset.lon * -2)}" +
+		$"~{Format(offset.lat * -2)}%2C0.000000" +
+		$"~0.000000%2C{Format(offset.lon * 2)}" +
+		$"~{Format(offset.lat * 2)}%2C0.000000" +
+		"&z=10";
+	string? GetPositionWidgetUrl() =>
+		$"https://yandex.ru/map-widget/v1/?ll={Format(current?.lat)}%2C{Format(current?.lon)}&mode=whatshere&whatshere%5Bpoint%5D={Format(current?.lat)}%2C{Format(current?.lon)}&whatshere%5Bzoom%5D=20&z=20";
+
+	void RandomizePosition()
+	{
+		float currLat = anchor.lat + (GetOffset() * offset.lat);
+		float currLon = anchor.lon + (GetOffset() * offset.lon);
+		current = (currLat, currLon);
+	}
+
+	void SetPrefab(string? rawData)
+	{
+		if (rawData is null) return;
+		float[] data = rawData.Split(' ').Select(r => float.Parse(r, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+
+		anchor = (data[0], data[2]);
+		offset = (data[1], data[3]);
+	}
+
+	protected override void OnInitialized()
+	{
+		SetPrefab(prefabs.First().Value);
+	}
+}
